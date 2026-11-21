@@ -13,6 +13,13 @@ through.
 
 Entry for the make.fun bounty: https://make.fun/bounty/the-catalogue-photo-of-an-2-20261121-0341
 
+## v2
+
+The door stands open wider than in v1, so the Bali beach — turquoise sea,
+palms and sand — fills the whole doorway and the impossible destination
+reads at a single glance. The keypad display is larger now, so
+"DESTINATION: BALI - 0 SECONDS" is clearly legible.
+
 ## How it works
 
 `catalogue.png` is the finished 819×1024 catalogue photo (under 1 MiB).

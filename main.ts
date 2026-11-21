@@ -6,6 +6,27 @@ const EXPECTED_WIDTH = 819;
 const EXPECTED_HEIGHT = 1024;
 const MAX_BYTES = 1048576;
 
+// CRC-32 (IEEE 802.3, polynomial 0xedb88320) over a PNG chunk's type + data.
+const CRC_TABLE = (() => {
+  const table = new Uint32Array(256);
+  for (let n = 0; n < 256; n++) {
+    let c = n;
+    for (let k = 0; k < 8; k++) {
+      c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+    }
+    table[n] = c >>> 0;
+  }
+  return table;
+})();
+
+function crc32(data: Buffer): number {
+  let crc = 0xffffffff;
+  for (const byte of data) {
+    crc = CRC_TABLE[(crc ^ byte) & 0xff] ^ (crc >>> 8);
+  }
+  return (crc ^ 0xffffffff) >>> 0;
+}
+
 function fail(check: string, detail: string): never {
   throw new Error(`entry check failed (${check}): ${detail}`);
 }
@@ -26,6 +47,11 @@ function verifyPng(label: string, data: Buffer): { width: number; height: number
   const height = data.readUInt32BE(20);
   if (width !== EXPECTED_WIDTH || height !== EXPECTED_HEIGHT) {
     fail(label, `dimensions are ${width}x${height}, expected ${EXPECTED_WIDTH}x${EXPECTED_HEIGHT}`);
+  }
+  const storedCrc = data.readUInt32BE(29);
+  const computedCrc = crc32(data.subarray(12, 29));
+  if (storedCrc !== computedCrc) {
+    fail(label, `IHDR CRC mismatch: stored 0x${storedCrc.toString(16)}, computed 0x${computedCrc.toString(16)} — the PNG header is corrupt`);
   }
   if (data.length > MAX_BYTES) {
     fail(label, `file is ${data.length} bytes, over the ${MAX_BYTES} byte cap`);
